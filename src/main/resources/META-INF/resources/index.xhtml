@@ -1,0 +1,162 @@
+<f:view xmlns="http://www.w3c.org/1999/xhtml"
+        xmlns:f="http://java.sun.com/jsf/core"
+        xmlns:h="http://java.sun.com/jsf/html"
+        xmlns:ui="http://java.sun.com/jsf/facelets"
+        xmlns:ng="http://xmlns.jcp.org/jsf/passthrough"
+        xmlns:c="http://java.sun.com/jsp/jstl/core"
+        xmlns:p="http://primefaces.org/ui">
+    <h:head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+        <h:outputStylesheet name="bootstrap/css/bootstrap.min.css"/>
+        <h:outputScript name="bootstrap/js/bootstrap.min.js"/>
+
+        <h:outputStylesheet name="css/custom.css"/>
+        <title>Bramon</title>
+        <style>
+            body {
+                font-size: 12px;
+            }
+        </style>
+    </h:head>
+    <h:body>
+
+        <p:growl id="message" showDetail="true" sticky="false" autoUpdate="true"/>
+
+        <h:form>
+            <p:growl id="msgs" showDetail="true"/>
+            <p:panel id="pnlCaminho" rendered="#{indexController.caminho == null}">
+                <p:outputLabel value="Caminho:"/>
+                <p:inputText value="#{indexController.caminho}"/>
+                <p:commandButton id="updateCaminho" update="@form" process="pnlCaminho"
+                                 actionListener="#{indexController.inicializa}" value="Carregar"/>
+
+            </p:panel>
+            <p:panel header="Filtros de Captura" rendered="#{indexController.caminho != null}">
+                <p:panelGrid id="filtroPanel" columns="3">
+                    <p:panelGrid columns="4">
+                        <p:outputLabel value="Data Inicio:"/>
+                        <p:calendar id="dataInicio" value="#{indexController.dataInicio}" showOn="button">
+                            <f:convertDateTime pattern="dd/MM/yyyy"/>
+                        </p:calendar>
+                        <p:outputLabel value="Data Fim:"/>
+                        <p:calendar id="dataFim" value="#{indexController.dataFim}" showOn="button">
+                            <f:convertDateTime pattern="dd/MM/yyyy"/>
+                        </p:calendar>
+
+                    </p:panelGrid>
+
+                    <p:panelGrid>
+                        <p:selectOneButton value="#{indexController.tipoFiltro}">
+                            <f:selectItem itemLabel="Mes Passado" itemValue="1"/>
+                            <f:selectItem itemLabel="Mes Atual" itemValue="2"/>
+                            <f:selectItem itemLabel="Ontem" itemValue="3"/>
+                            <f:selectItem itemLabel="Hoje" itemValue="4"/>
+                            <f:selectItem itemLabel="Tudo" itemValue="5"/>
+                            <p:ajax listener="#{indexController.ajustaDatas}" update="filtroPanel"/>
+                        </p:selectOneButton>
+                    </p:panelGrid>
+
+                    <p:commandButton id="ajax" update="capturasPanel"
+                                     actionListener="#{indexController.atualizarCapturas}" value="Atualizar"
+                                     onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+
+                    <p:panel>
+                        <p:selectOneButton value="#{indexController.apenasAnalisadas}">
+                            <f:selectItem itemLabel="Todas" itemValue=""/>
+                            <f:selectItem itemLabel="Analisadas" itemValue="true"/>
+                            <f:selectItem itemLabel="Nao Analisadas" itemValue="false"/>
+                        </p:selectOneButton>
+                    </p:panel>
+                </p:panelGrid>
+                <p:commandButton update="capturasPanel"
+                                 actionListener="#{indexController.analisarRemocao}" value="Marcar Lixo para Remocao"
+                                 onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+                <p:commandButton update="capturasPanel"
+                                 actionListener="#{indexController.removerSelecionadas}" value="Apagar Selecionadas"
+                                 onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+
+
+            </p:panel>
+
+
+            <p:panel id="capturasPanel" toggleable="true" rendered="#{indexController.caminho != null}"
+                     header="Total de Capturas: #{indexController.capturasFiltradas.size()} (#{indexController.analisadas} Analisadas)">
+
+
+                <p:panelGrid columns="5">
+                    <c:forEach items="#{indexController.capturasFiltradas}" var="cap">
+                        <p:panel class="#{cap.analise == null ? (cap.remover == true ? 'bg-danger' : 'bg-warning' ) : '' }">
+                            <p:panelGrid columns="1">
+
+                                <p:commandLink action="#{indexController.selecionaCaptura(cap, 'IMAGEM')}"
+                                               update="dlgImageContent"
+                                               onstart="PF('statusDialog').show()"
+                                               onsuccess="PF('statusDialog').hide()">
+                                    <p:graphicImage class="img-thumbnail"
+                                                    value="#{indexController.carregaImagem(cap.caminhoThumbnail)}"
+                                                    stream="false" cache="true"/>
+                                </p:commandLink>
+                                <h:outputText value="#{cap.data}">
+                                    <f:convertDateTime pattern="dd.MM.yyyy HH:mm"/>
+                                </h:outputText>
+
+                                <c:if test="#{cap.analise != null}">
+                                    <h:outputText value="#{cap.analise.objeto.classe}"/>
+                                </c:if>
+                                <c:if test="#{cap.analise == null}">
+                                    <p:selectBooleanButton id="value1" value="#{cap.remover}"
+                                                           onIcon="fa fa-fw fa-trash" immediate="true" onLabel="" offLabel=""
+                                                           offIcon="fa fa-fw fa-trash-o" style="width:30px;height:30px"/>
+                                </c:if>
+                                <p:commandButton value="V" action="#{indexController.selecionaCaptura(cap, 'VIDEO')}"
+                                                 update="dlgVideoContent"
+                                                 onstart="PF('statusDialog').show()"
+                                                 onsuccess="PF('statusDialog').hide()" rendered="false"/>
+                            </p:panelGrid>
+                        </p:panel>
+                    </c:forEach>
+                    <p:dialog id="dlgImageContent" header="#{indexController.captura.nomeArquivo.replace('.xml', '')}"
+                              widgetVar="dlg1" modal="true" width="800" height="600" position="top"
+                              positionType="fixed" closeOnEscape="true" closable="true">
+                        <ui:param name="cap" value="#{indexController.captura}"/>
+                        <p:panelGrid columns="1">
+                            <p:graphicImage class="img-thumbnail"
+                                            value="#{indexController.carregaImagem(cap.caminhoImagem)}"
+                                            stream="false" cache="true" width="800" height="600"/>
+                        </p:panelGrid>
+                        <p:panel>
+                            <h:outputText value="#{cap.nomeArquivo}" />
+                            <c:if test="#{cap.analise != null}">
+                                <h:outputText value="#{cap.analise.objeto.classe}"/>
+                            </c:if>
+                            <p:commandButton value="RGB" action="#{indexController.analisaImagem()}"
+                                             onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+                        </p:panel>
+                    </p:dialog>
+
+                    <p:dialog id="dlgVideoContent"
+                              header="#{indexController.captura.nomeArquivo.replace('.xml', '')} aaaa" widgetVar="dlg2"
+                              modal="true" width="800" height="600" position="top" positionType="fixed">
+                        <ui:param name="cap" value="#{indexController.captura}"/>
+                        <p:panelGrid columns="1">
+                            <p:media value="#{indexController.videoCaptura}" player="flash" cache="true"/>
+                        </p:panelGrid>
+                        <p:panel>
+                            <h:outputText value="#{cap.nomeArquivo}"/>
+                            <c:if test="#{cap.analise != null}">
+                                <br/> <h:outputText value="#{cap.analise.objeto.classe}"/>
+                            </c:if>
+                        </p:panel>
+                    </p:dialog>
+                </p:panelGrid>
+            </p:panel>
+
+        </h:form>
+
+        <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false"
+                  showHeader="false" style="background-color: #676d89">
+            <p:graphicImage name="images/ship_loading.gif"/>
+        </p:dialog>
+    </h:body>
+</f:view>
