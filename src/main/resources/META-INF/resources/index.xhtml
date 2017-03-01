@@ -34,19 +34,19 @@
             </p:panel>
             <p:panel header="Filtros de Captura" rendered="#{indexController.caminho != null}">
                 <p:panelGrid id="filtroPanel" columns="3">
-                    <p:panelGrid columns="4">
+                    <p:panelGrid columns="2">
                         <p:outputLabel value="Data Inicio:"/>
-                        <p:calendar id="dataInicio" value="#{indexController.dataInicio}" showOn="button">
+                        <p:calendar id="dataInicio" value="#{indexController.dataInicio}" showOn="button" size="10">
                             <f:convertDateTime pattern="dd/MM/yyyy"/>
                         </p:calendar>
                         <p:outputLabel value="Data Fim:"/>
-                        <p:calendar id="dataFim" value="#{indexController.dataFim}" showOn="button">
+                        <p:calendar id="dataFim" value="#{indexController.dataFim}" showOn="button" size="10">
                             <f:convertDateTime pattern="dd/MM/yyyy"/>
                         </p:calendar>
 
                     </p:panelGrid>
 
-                    <p:panelGrid>
+                    <p:panelGrid columns="1">
                         <p:selectOneButton value="#{indexController.tipoFiltro}">
                             <f:selectItem itemLabel="Mes Passado" itemValue="1"/>
                             <f:selectItem itemLabel="Mes Atual" itemValue="2"/>
@@ -55,29 +55,39 @@
                             <f:selectItem itemLabel="Tudo" itemValue="5"/>
                             <p:ajax listener="#{indexController.ajustaDatas}" update="filtroPanel"/>
                         </p:selectOneButton>
-                    </p:panelGrid>
-
-                    <p:commandButton id="ajax" update="capturasPanel"
-                                     actionListener="#{indexController.atualizarCapturas}" value="Atualizar"
-                                     onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
-
-                    <p:panel>
                         <p:selectOneButton value="#{indexController.apenasAnalisadas}">
-                            <f:selectItem itemLabel="Todas" itemValue=""/>
+                            <f:selectItem itemLabel="Todas Capturas" itemValue=""/>
                             <f:selectItem itemLabel="Analisadas" itemValue="true"/>
                             <f:selectItem itemLabel="Nao Analisadas" itemValue="false"/>
                         </p:selectOneButton>
+                    </p:panelGrid>
+
+                    <p:commandButton id="ajax" update="capturasPanel" class="btn btn-primary"
+                                     actionListener="#{indexController.atualizarCapturas}" value="Atualizar"
+                                     onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+
+                </p:panelGrid>
+                <p:panelGrid columns="3">
+                    <p:panel>
+                        <i class="fa fa-trash-o fa-4x"></i>
+                    </p:panel>
+                    <p:panelGrid columns="1">
+                        <p:commandButton update="capturasPanel"
+                                         actionListener="#{indexController.analisarRemocao}" value="Marcar Lixo para Remocao"
+                                         onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+                        <p:commandButton update="capturasPanel"
+                                         actionListener="#{indexController.removerSelecionadas}" value="Apagar Selecionadas"
+                                         onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+                    </p:panelGrid>
+                    <p:panel>
+                        <i class="fa fa-trash-o fa-4x"></i>
                     </p:panel>
                 </p:panelGrid>
-                <p:commandButton update="capturasPanel"
-                                 actionListener="#{indexController.analisarRemocao}" value="Marcar Lixo para Remocao"
-                                 onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
-                <p:commandButton update="capturasPanel"
-                                 actionListener="#{indexController.removerSelecionadas}" value="Apagar Selecionadas"
-                                 onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+
 
 
             </p:panel>
+            <p:progressBar value="#{indexController.espacoLivrePerc}" labelTemplate="Espaco Livre no Disco: #{indexController.espacoLivre}" displayOnly="true"/>
 
 
             <p:panel id="capturasPanel" toggleable="true" rendered="#{indexController.caminho != null}"

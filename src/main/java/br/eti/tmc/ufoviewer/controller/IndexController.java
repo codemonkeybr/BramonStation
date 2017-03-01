@@ -8,6 +8,7 @@ import br.eti.tmc.ufoviewer.util.JsfUtil;
 import org.primefaces.context.RequestContext;
 import org.primefaces.model.StreamedContent;
 import org.springframework.stereotype.Controller;
+import sun.security.jgss.TokenTracker;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
@@ -48,6 +49,8 @@ public class IndexController {
     Captura captura;
 
     Boolean apenasAnalisadas;
+    long espacoLivre;
+    long espacoTotal;
 
 
     String caminho; //= "F:\\bramon\\!data"; //F:\bramon\!data  /Volumes/SAMSUNG/!data
@@ -64,13 +67,12 @@ public class IndexController {
 
         try {
 
-            //motorArquivoService = new MotorArquivoServiceImpl(); //TODO ISSO NAO DEVE EXSISTIR
-
             caminho = motorArquivoService.getCaminho();
 
             if (caminho == null || caminho.isEmpty())
                 return;
 
+            atualizaEspacoDisco();
 
             System.out.println("Caminho: " + caminho);
             capturas = motorArquivoService.varrePorCapturas(new File(caminho));
@@ -94,6 +96,11 @@ public class IndexController {
         }
     }
 
+    private void atualizaEspacoDisco() {
+        espacoLivre = new File(caminho).getUsableSpace();
+        espacoTotal = new File(caminho).getTotalSpace();
+    }
+
     public void inicializa() {
         init();
     }
@@ -115,7 +122,10 @@ public class IndexController {
             JsfUtil.addSuccessMessage("Foram removidas " + toRemove.size() + " capturas!");
         } catch (Exception e) {
             JsfUtil.addErrorMessage("Erro ao remover captura! \n" + e.getMessage());
+            e.printStackTrace();
         }
+
+        atualizaEspacoDisco();
 
     }
 
@@ -169,7 +179,6 @@ public class IndexController {
     }
 
     public void ajustaDatas() throws Exception {
-        System.out.println("tipoFiltro: " + tipoFiltro);
 
         Date dateStart;
         Date dateEnd;
@@ -304,33 +313,12 @@ public class IndexController {
                         if (hex.contains("ffff"))
                             ocorrencias = ocorrencias + 1;
 
-//                    if (color2counter.containsKey(hex))
-//                        color2counter.put(hex, color2counter.get(hex) + 1);
-//                    else
-//                        color2counter.put(hex, 1);
-
-                        //System.out.println("R["+red+"]"+"G["+green+"]"+"B["+blue+"]");
-
-                        //System.out.println(hex);
 
                     }
                 }
 
                 System.out.println((100 * ocorrencias) / (image.getWidth() * image.getHeight()) + "% ffff");
-//            Map.Entry<String, Integer> maxEntry = null;
 
-//            for (Map.Entry<String, Integer> entry : color2counter.entrySet())
-//            {
-//                if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
-//                {
-//                    maxEntry = entry;
-//                }
-//            }
-//
-//            System.out.println("Maior ocorrencia: "+maxEntry.getKey()+ "/" +maxEntry.getValue());
-//
-//            if (maxEntry.getKey().contains("ffff"))
-//                System.out.print("Nao e captura valida por ser " +(100*maxEntry.getValue())/(image.getWidth()*image.getHeight()) +"% " +maxEntry.getKey());
             } catch (Exception e) {
                 JsfUtil.addErrorMessage("Erro ao analisar imagem: " + e.getMessage());
             }
@@ -356,6 +344,13 @@ public class IndexController {
                 return new PersonalStreamedContent(new FileInputStream(new File(param.replace("xml", "avi"))), "video/avi");
             return null;
         }
+    public static String humanReadableByteCount(long bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
 
 
         public int getAnalisadas () {
@@ -431,6 +426,14 @@ public class IndexController {
                 JsfUtil.addErrorMessage("Erro ao Carregar Arquivo: " + captura.getCaminhoArquivo());
             }
             return null;
+        }
+
+        public String getEspacoLivrePerc(){
+            return  Long.toString(((espacoLivre * 100) / espacoTotal));
+        }
+
+        public String getEspacoLivre(){
+            return humanReadableByteCount(espacoLivre, true);
         }
 
     }

@@ -10,13 +10,13 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>br.eti.tmc.ufoviewer</groupId>
-    <artifactId>ufoviewer</artifactId>
+    <groupId>br.eti.tmc.bramonstation</groupId>
+    <artifactId>bramonstation</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>Ufo Viewer</name>
-    <description>Ufo Analyser File Viewer</description>
+    <name>Bramon Station</name>
+    <description>Bramon Station Manager</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
